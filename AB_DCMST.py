@@ -25,7 +25,7 @@ def geteiCost(ei):
 def geteiPheromoneLevel(ei):
     return ei.pheromoneLevel
 
-def getTreeCost(self, edgeInfos):
+def getTreeCost(edgeInfos):
     return sum(ei.cost for ei in edgeInfos)
 
 class Ant:
@@ -171,8 +171,15 @@ class AB_DCMST:
             
         B = self.getTree()  # best tree
         minCost = getTreeCost(B)
-
-        while True:  # stopping criteria not met:
+        lastImprovementCycle = 0
+        
+        for cycle in xrange(self.maxCycles):  # stopping criteria not met:
+            if cycle%100 == 0:
+                print 'cycle =', cycle
+            
+            if cycle - lastImprovementCycle > self.stopCycles:
+                break
+            
             # Exploration Stage
             for step in xrange(1, self.s + 1):
                 if step == self.s / 3 or step == 2 * self.s / 3:
@@ -180,7 +187,6 @@ class AB_DCMST:
                 for ant in self.ants:
                     self.moveAnt(ant)  # move ant along one edge
                     
-
             self.updatePheromones()  # update pheromone levels for all edges
             # Tree Construction Stage
             T = self.getTree()
@@ -189,12 +195,20 @@ class AB_DCMST:
             if newCost < minCost:
                 B = T  # Update best tree
                 minCost = newCost
+                print 'New min Cost', minCost
+                lastImprovementCycle = cycle
             
             self.pheromoneEnhancement(B)  # enhance pheromone levels for edges in the best tree B
             
             # if no improvement in 100 cycles
-            #    evaporate pheromone from edges of the best tree B
-
+            
+            if cycle - lastImprovementCycle > self.escapeCycles:
+                print 'No improvement in 100 cycles'
+                # evaporate pheromone from edges of the best tree B
+                for ei in B:
+                    ei.pheromoneLevel *= (1 - self.H)
+                # TODO check validity
+                lastImprovementCycle = cycle
 
         return B
         
@@ -243,5 +257,6 @@ if __name__ == '__main__':
     printEI()
     print
     
-    print abDCMST.getTree()
+    tree = abDCMST.getSolution()
+    print getTreeCost(tree)
     
