@@ -18,6 +18,11 @@ class EdgeInfo:
     def __repr__(self):
         return 'EdgeInfo(cost={:.1f}, ip={:.1f}, l={:.1f}, u={})'.format(self.cost,
                 self.initialPheromone, self.pheromoneLevel, self.updates)
+def geteiCost(ei):
+    return ei.cost
+
+def geteiPheromoneLevel(ei):
+    return ei.pheromoneLevel
 
 class Ant:
     def __init__(self, initialVertice):
@@ -103,16 +108,27 @@ class AB_DCMST:
             else:
                 nAttempts += 1
     
+    def clipEdgeInfoPheromoneLevel(self, ei):
+        '''Put pheromone level in acceptable range'''
+        if ei.pheromoneLevel > self.maxP:
+                ei.pheromoneLevel = self.maxP - ei.initialPheromone
+        elif ei.pheromoneLevel < self.minP:
+            ei.pheromoneLevel = self.minP + ei.initialPheromone
+    
     def updatePheromone(self):
         for _, u, v in self.edges:
             ei = self.graph[u][v]
             ei.pheromoneLevel = (1 - self.H) * ei.pheromoneLevel + \
                                 ei.updates * ei.initialPheromone
-            if ei.pheromoneLevel > self.maxP:
-                ei.pheromoneLevel = self.maxP - ei.initialPheromone
-            if ei.pheromoneLevel < self.minP:
-                ei.pheromoneLevel = self.minP + ei.initialPheromone
+            self.clipEdgeInfoPheromoneLevel(ei)
             # TODO do not forget to clear ei.updates
+    
+    def pheromoneEnhancement(self, edgeInfos):
+        '''List of edgeInfos that are to have the pheromone level enhanced'''
+        for ei in edgeInfos:
+            ei.pheromoneLevel *= self.Y
+            self.clipEdgeInfoPheromoneLevel(ei)
+        
     
     def getTree(self):
         self.edgeInfos.sort(key=lambda ei: ei.pheromoneLevel, reverse=True)
@@ -125,7 +141,7 @@ class AB_DCMST:
             u, v = ei.u, ei.v
             '''Essaye d'ajouter un arc a la solution'''
             if subtrees[u] != subtrees[v] and \
-            degrees[u] < self.d and degrees[v] < self.d: #Check constraint
+               degrees[u] < self.d and degrees[v] < self.d: #Check constraint
                 solution.append(ei)
                 if len(solution) == self.n - 1:
                     break
