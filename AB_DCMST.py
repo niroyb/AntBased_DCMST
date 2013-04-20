@@ -3,12 +3,14 @@
 
 # from __future__ import division
 from collections import defaultdict
-#from UnionFind import UnionFind
+from UnionFind import UnionFind
 import random
 
 class EdgeInfo:
-    def __init__(self, cost, initialPheromone):
+    def __init__(self, cost, u, v, initialPheromone):
         self.cost = cost
+        self.u = u #vertice 1
+        self.v = v #vertice 2 #TODO watch out for vertice order dependent bugs
         self.initialPheromone = initialPheromone  # Initial Level
         self.pheromoneLevel = initialPheromone  # Current level
         self.updates = 0
@@ -57,7 +59,7 @@ class AB_DCMST:
         for cost, u, v in self.edges:
             cost = float(cost)
             initialPheromone = (self.M - cost) + self.minP
-            ei = EdgeInfo(cost, initialPheromone)
+            ei = EdgeInfo(cost, u, v, initialPheromone)
             # To get info from two vertices easily
             self.graph[u][v] = ei
             self.graph[v][u] = ei
@@ -111,6 +113,27 @@ class AB_DCMST:
             if ei.pheromoneLevel < self.minP:
                 ei.pheromoneLevel = self.minP + ei.initialPheromone
             # TODO do not forget to clear ei.updates
+    
+    def getTree(self):
+        self.edgeInfos.sort(key=lambda ei: ei.pheromoneLevel, reverse=True)
+            
+        subtrees = UnionFind()
+        solution = []
+        degrees = defaultdict(int)
+        
+        for ei in self.edgeInfos:
+            u, v = ei.u, ei.v
+            '''Essaye d'ajouter un arc a la solution'''
+            if subtrees[u] != subtrees[v] and \
+            degrees[u] < self.d and degrees[v] < self.d: #Check constraint
+                solution.append(ei)
+                if len(solution) == self.n - 1:
+                    break
+                degrees[u] += 1
+                degrees[v] += 1
+                subtrees.union(u,v)
+            
+        return solution
 
     '''    
     def getSolution(self):
@@ -171,8 +194,8 @@ if __name__ == '__main__':
              (172, 14, 8), (190, 14, 9), (202, 14, 10), (228, 14, 11), (247, 14, 12),
              (271, 14, 13)]
 
-    constraint = 3
-    abDCMST = AB_DCMST(edges, constraint)
+    c = 3
+    abDCMST = AB_DCMST(edges, c)
     for _ in xrange(100):
         print abDCMST.getNextVertice(0)
         
@@ -185,7 +208,10 @@ if __name__ == '__main__':
         for ei in abDCMST.edgeInfos:
             print ei
     printEI()
+    print
     abDCMST.updatePheromone()
     printEI()
+    print
     
+    print abDCMST.getTree()
     

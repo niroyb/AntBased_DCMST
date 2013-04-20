@@ -11,7 +11,7 @@ def printEdgesSol(sol):
     '''Prints the edges in the specified format'''
     edges = []
     #Extraire les vertices
-    for c, v1, v2 in sol:
+    for _, v1, v2 in sol:
         # Contrainte de v1 < v2 a l'affichage
         if v1 > v2:
             v1, v2 = v2, v1
