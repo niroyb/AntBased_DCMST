@@ -1,6 +1,7 @@
 import re
 from os import path
 import glob
+from AB_DCMST import AB_DCMST, getTreeCost
 
 def getNbVertices(filePath):
     '''Extract number of vertices from file name'''
@@ -25,11 +26,15 @@ def getEdges(filePath, nbVertices):
     return edges
 
 if __name__ == '__main__':
-    
-    constraint = 3
-    
+
     for filePath in glob.glob('Data/shrd*.txt'):
+        print filePath
         nbVertices = getNbVertices(filePath)
         edges = getEdges(filePath, nbVertices)
-        print filePath
-        print edges
+        print 'Vertices :', nbVertices, 'Edges :', len(edges)
+        
+        antBasedSolver = AB_DCMST(edges)
+        for constraint in xrange(3, 6):
+            tree = antBasedSolver.getSolution(constraint)
+            print constraint, getTreeCost(tree)
+        print

@@ -5,8 +5,8 @@ __author__ = 'Nicolas Roy @niroyb'
 __date__ = '2013-04-20'
 
 '''
-Implementation of an an Ant-Based Algorithm for Finding 
-Degree-Constrained Minimum Spanning Tree.
+Python Implementation of :
+An Ant-Based Algorithm for Finding Degree-Constrained Minimum Spanning Tree.
 Algorithm authors : Thang N. Bui and Catherine M. Zrncic
 Algoritm paper can be found here:
 http://www.cs.york.ac.uk/rts/docs/GECCO_2006/docs/p11.pdf
@@ -103,8 +103,7 @@ class AB_DCMST:
             pheromoneSum += ei.pheromoneLevel
             if pheromoneSum >= target:
                 return v2
-        # return v2
-        raise Exception("Shouldn't get here")
+        return v2
     
     def __moveAnt(self, ant):
         '''Move an ant'''
@@ -168,7 +167,6 @@ class AB_DCMST:
                     degrees[u] += 1
                     degrees[v] += 1
                     subtrees.union(u, v)
-            
         return solution
      
     def getSolution(self, degreeConstraint):
@@ -224,13 +222,11 @@ class AB_DCMST:
                     ei.pheromoneLevel *= (1 - self.H)
                 # Reset lastImprovementCycle
                 lastImprovementCycle = cycle
-
         return B
-        
 
 if __name__ == '__main__':
     # Test data from http://cs.hbg.psu.edu/benchmarks/file_instances/spanning_tree/SHRD-Graphs
-    # file : shrd150 with proven optimal solution of 582
+    # file : shrd150 with proven optimal solution of 582 for degree constraint of 3
     edges = [(4, 1, 0), (3, 2, 0), (31, 2, 1), (11, 3, 0), (38, 3, 1),
              (44, 3, 2), (16, 4, 0), (34, 4, 1), (54, 4, 2), (68, 4, 3),
              (14, 5, 0), (22, 5, 1), (51, 5, 2), (76, 5, 3), (92, 5, 4),
