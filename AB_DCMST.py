@@ -63,42 +63,49 @@ class AB_DCMST:
     escapeCycles = 100  # Number of cycles without improvement before escaping
     stopCycles = 2500  # Number of cycles without improvement before stopping
     
-    def __init__(self, edges):
+    def __init__(self, edges, verbose=False):
         
         # Edge data
         edges.sort()
         self.m = float(edges[ 0][0])  # min edge cost
         self.M = float(edges[-1][0])  # max edge cost
         costDiff = self.M - self.m
-        self.minP = costDiff / 3.0  # max pheromone level
-        self.maxP = 1000.0 * (costDiff + self.minP)  # min pheromone level
+        self.minP = costDiff / 3.0  # max pheromone level of edges
+        self.maxP = 1000.0 * (costDiff + self.minP)  # min pheromone level of edges
         
-        self.d = 3  # default degree constraint
+        self.verbose = verbose
+        self.d = 0  # Degree constraint
         
         self.graph = defaultdict(dict)
-        '''Sets the associated edge data'''
+        #Set the static edge data and edgeInfo retrieval data structures
         self.edgeInfos = []
         for cost, u, v in edges:
             cost = float(cost)
+            # Calculate pheromone level of current edge
             initialPheromone = (self.M - cost) + self.minP
             ei = EdgeInfo(cost, u, v, initialPheromone)
-            # To get info from two vertices easily
+            # To get edge info from two vertices easily
             self.graph[u][v] = ei
             self.graph[v][u] = ei
-            # To iterate easily
+            # To iterate easily on edges
             self.edgeInfos.append(ei)
         
         self.ants = []
-        self.n = len(self.graph)  # Number of vertices
-        self.nCandiates = 5 * self.n  # Candidate set size
+        self.n = len(self.graph) # Number of vertices
+        self.nCandiates = 5 * self.n # Candidate set size
     
     # the sum Could be calculated after each pheromone update
     def __getNextVertice(self, startVertice):
-        '''Returns a neighbour vertice according to probability of pheromone levels'''
-        neighbourPheromes = (ei.pheromoneLevel for ei in self.graph[startVertice].values())
-        pheromoneSum = sum(neighbourPheromes)
+        '''Returns a neighbor vertice according to probability of pheromone levels'''
+        # Calculate the sum of the pheromone levels neighbor edges
+        neighborPheromes = (ei.pheromoneLevel for ei in self.graph[startVertice].values())
+        pheromoneSum = sum(neighborPheromes)
+        
+        # Pick a number between 0 and the sum of pheromone levels
         target = random.uniform(0.0, pheromoneSum)
         pheromoneSum = 0.0
+        
+        # Find the vertice that has the target number in it's pheromone range
         for v2, ei in self.graph[startVertice].items():
             pheromoneSum += ei.pheromoneLevel
             if pheromoneSum >= target:
@@ -115,7 +122,7 @@ class AB_DCMST:
             if j not in ant.visited:
                 # mark edge (i, j) for pheromone update
                 self.graph[i][j].updates += 1
-                # move ant to vertex j
+                # move ant to vertice j
                 ant.position = j
                 # mark j visited
                 ant.visited.add(j)
@@ -149,23 +156,32 @@ class AB_DCMST:
         # Sort edges by decreasing pheromone levels
         self.edgeInfos.sort(key=geteiPheromoneLevel, reverse=True)
         start = 0
+        # Current edges that will be inspected
         C = []
-        subtrees = UnionFind()
+        # Data structure for Kruskal's algorithm
+        subtrees = UnionFind() 
         solution = []
-        degrees = defaultdict(int)
+        degrees = defaultdict(int) # Map of degrees for each vertice
+        
+        # While we don't have n-1 edges in our solution
         while len(solution) != self.n - 1:
+            # Pick the the next nCanditates edges
             C = self.edgeInfos[start : start + self.nCandiates]
+            
+            # Sort the edge selection by increasing cost
             C.sort(key=geteiCost)
             start += self.nCandiates
             
             for ei in C:
                 u, v = ei.u, ei.v
-                '''Essaye d'ajouter un arc a la solution'''
+                # Test if edge can be added to the current solution
                 if subtrees[u] != subtrees[v] and \
                    degrees[u] < self.d and degrees[v] < self.d:  # Check constraint
                     solution.append(ei)
+                    # Increment degrees of vertices of the added edge
                     degrees[u] += 1
                     degrees[v] += 1
+                    # Update subtrees
                     subtrees.union(u, v)
         return solution
      
@@ -181,12 +197,12 @@ class AB_DCMST:
             
         B = self.__getTree()  # best tree
         minCost = getTreeCost(B)
-        # print 'Initial minCost =', minCost
+        if self.verbose: print 'Initial minCost =', minCost
         lastImprovementCycle = 0
         
         for cycle in xrange(self.maxCycles):  # stopping criteria not met:
-            # if cycle%100 == 0:
-            #    print 'cycle =', cycle
+            if self.verbose and cycle%100 == 0:
+                print 'cycle =', cycle
             
             if cycle - lastImprovementCycle > self.stopCycles:
                 break
@@ -198,6 +214,7 @@ class AB_DCMST:
                 for ant in self.ants:
                     self.__moveAnt(ant)  # move ant along one edge
             
+            # Remove visited constraint from ants
             for ant in self.ants:
                 ant.visited.clear()
                     
@@ -209,14 +226,15 @@ class AB_DCMST:
             if newCost < minCost:
                 B = T  # Update best tree
                 minCost = newCost
-                # print 'New min Cost', minCost
+                if self.verbose: print 'New min Cost', minCost
                 lastImprovementCycle = cycle
             
-            self.__pheromoneEnhancement(B)  # enhance pheromone levels for edges in the best tree B
+            # enhance pheromone levels for edges in the best tree B
+            self.__pheromoneEnhancement(B)
             
-            # if no improvement in 100 cycles
+            # if no improvement in escapeCycles cycles
             if cycle - lastImprovementCycle > self.escapeCycles:
-                # print 'No improvement in 100 cycles'
+                if self.verbose: print 'No improvement in 100 cycles'
                 # evaporate pheromone levels from edges of the best tree B
                 for ei in B:
                     ei.pheromoneLevel *= (1 - self.H)
@@ -250,8 +268,9 @@ if __name__ == '__main__':
              (172, 14, 8), (190, 14, 9), (202, 14, 10), (228, 14, 11), (247, 14, 12),
              (271, 14, 13)]
 
-    antBasedSolver = AB_DCMST(edges)
-    for c in xrange(3, 6):
-        tree = antBasedSolver.getSolution(c)
-        print c, getTreeCost(tree)
+    antBasedSolver = AB_DCMST(edges, verbose=True)
+    for constraint in xrange(3, 6):
+        tree = antBasedSolver.getSolution(constraint)
+        print 'Constraint =', constraint, 'Min cost found =', getTreeCost(tree)
+        print
     
