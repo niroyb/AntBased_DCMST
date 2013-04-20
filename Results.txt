@@ -1,0 +1,40 @@
+Data\shrd150.txt
+Vertices : 15 Edges : 105
+3 584.0
+4 430.0
+5 341.0
+Data\shrd159.txt
+Vertices : 15 Edges : 105
+3 599.0
+4 431.0
+5 336.0
+Data\shrd200.txt
+Vertices : 20 Edges : 190
+3 1089.0
+4 805.0
+5 634.0
+Data\shrd209.txt
+Vertices : 20 Edges : 190
+3 1094.0
+4 801.0
+5 633.0
+Data\shrd258.txt
+Vertices : 25 Edges : 300
+3 1765.0
+4 1287.0
+5 1006.0
+Data\shrd259.txt
+Vertices : 25 Edges : 300
+3 1778.0
+4 1294.0
+5 1033.0
+Data\shrd300.txt
+Vertices : 30 Edges : 435
+3 2614.0
+4 1924.0
+5 1521.0
+Data\shrd309.txt
+Vertices : 30 Edges : 435
+3 2598.0
+4 1916.0
+5 1492.0
