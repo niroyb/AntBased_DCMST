@@ -29,7 +29,7 @@ class EdgeInfo:
         return 'EdgeInfo(cost={:.1f}, ip={:.1f}, l={:.1f}, u={})'.format(self.cost,
                 self.initialPheromone, self.pheromoneLevel, self.updates)
 
-#Functions for sorting the edge infos
+# Functions for sorting the edge infos
 def geteiCost(ei):
     return ei.cost
 
@@ -52,7 +52,7 @@ class Ant:
         return 'Ant({}, {})'.format(self.position, self.visited)
     
 class AB_DCMST:
-    maxCycles = 500 # 10000  # Maximum allowed cycles
+    maxCycles = 500  # 10000  # Maximum allowed cycles
     s = 75  # Steps: number of edges an ant traverses each cycle
     H = 0.5  # Initial pheromone evaporation factor
     Y = 1.5  # Initial pheromone enhancement factor
@@ -183,12 +183,12 @@ class AB_DCMST:
             
         B = self.__getTree()  # best tree
         minCost = getTreeCost(B)
-        print 'Initial minCost =', minCost
+        # print 'Initial minCost =', minCost
         lastImprovementCycle = 0
         
         for cycle in xrange(self.maxCycles):  # stopping criteria not met:
-            if cycle%100 == 0:
-                print 'cycle =', cycle
+            # if cycle%100 == 0:
+            #    print 'cycle =', cycle
             
             if cycle - lastImprovementCycle > self.stopCycles:
                 break
@@ -211,14 +211,14 @@ class AB_DCMST:
             if newCost < minCost:
                 B = T  # Update best tree
                 minCost = newCost
-                print 'New min Cost', minCost
+                # print 'New min Cost', minCost
                 lastImprovementCycle = cycle
             
             self.__pheromoneEnhancement(B)  # enhance pheromone levels for edges in the best tree B
             
             # if no improvement in 100 cycles
             if cycle - lastImprovementCycle > self.escapeCycles:
-                print 'No improvement in 100 cycles'
+                # print 'No improvement in 100 cycles'
                 # evaporate pheromone levels from edges of the best tree B
                 for ei in B:
                     ei.pheromoneLevel *= (1 - self.H)
@@ -229,7 +229,8 @@ class AB_DCMST:
         
 
 if __name__ == '__main__':
-    
+    # Test data from http://cs.hbg.psu.edu/benchmarks/file_instances/spanning_tree/SHRD-Graphs
+    # file : shrd150 with proven optimal solution of 582
     edges = [(4, 1, 0), (3, 2, 0), (31, 2, 1), (11, 3, 0), (38, 3, 1),
              (44, 3, 2), (16, 4, 0), (34, 4, 1), (54, 4, 2), (68, 4, 3),
              (14, 5, 0), (22, 5, 1), (51, 5, 2), (76, 5, 3), (92, 5, 4),
@@ -253,9 +254,8 @@ if __name__ == '__main__':
              (172, 14, 8), (190, 14, 9), (202, 14, 10), (228, 14, 11), (247, 14, 12),
              (271, 14, 13)]
 
-    c = 3
     antBasedSolver = AB_DCMST(edges)
-    antBasedSolver.
-    tree = antBasedSolver.getSolution(c)
-    print getTreeCost(tree)
+    for c in xrange(3, 6):
+        tree = antBasedSolver.getSolution(c)
+        print c, getTreeCost(tree)
     
