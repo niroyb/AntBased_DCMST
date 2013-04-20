@@ -9,8 +9,8 @@ import random
 class EdgeInfo:
     def __init__(self, cost, u, v, initialPheromone):
         self.cost = cost
-        self.u = u #vertice 1
-        self.v = v #vertice 2 #TODO watch out for vertice order dependent bugs
+        self.u = u  # vertice 1
+        self.v = v  # vertice 2 #TODO watch out for vertice order dependent bugs
         self.initialPheromone = initialPheromone  # Initial Level
         self.pheromoneLevel = initialPheromone  # Current level
         self.updates = 0
@@ -18,11 +18,15 @@ class EdgeInfo:
     def __repr__(self):
         return 'EdgeInfo(cost={:.1f}, ip={:.1f}, l={:.1f}, u={})'.format(self.cost,
                 self.initialPheromone, self.pheromoneLevel, self.updates)
+
 def geteiCost(ei):
     return ei.cost
 
 def geteiPheromoneLevel(ei):
     return ei.pheromoneLevel
+
+def getTreeCost(self, edgeInfos):
+    return sum(ei.cost for ei in edgeInfos)
 
 class Ant:
     def __init__(self, initialVertice):
@@ -31,6 +35,7 @@ class Ant:
 
     def __repr__(self):
         return 'Ant({}, {})'.format(self.position, self.visited)
+    
     
 class AB_DCMST:
     maxCycles = 10000  # Maximum allowed cycles
@@ -71,8 +76,8 @@ class AB_DCMST:
             # To iterate easily
             self.edgeInfos.append(ei)
         
-        self.ants = [Ant(i) for i in self.graph.keys()]
-        self.n = len(self.ants)  # Number of vertices
+        self.ants = []
+        self.n = len(self.graph)  # Number of vertices
         self.nCandiates = 5 * self.n  # Candidate set size
         
     
@@ -115,13 +120,13 @@ class AB_DCMST:
         elif ei.pheromoneLevel < self.minP:
             ei.pheromoneLevel = self.minP + ei.initialPheromone
     
-    def updatePheromone(self):
-        for _, u, v in self.edges:
-            ei = self.graph[u][v]
+    def updatePheromones(self):
+        for ei in self.edgeInfos:
             ei.pheromoneLevel = (1 - self.H) * ei.pheromoneLevel + \
                                 ei.updates * ei.initialPheromone
             self.clipEdgeInfoPheromoneLevel(ei)
             # TODO do not forget to clear ei.updates
+            ei.updates = 0
     
     def pheromoneEnhancement(self, edgeInfos):
         '''List of edgeInfos that are to have the pheromone level enhanced'''
@@ -131,59 +136,68 @@ class AB_DCMST:
         
     
     def getTree(self):
-        self.edgeInfos.sort(key=lambda ei: ei.pheromoneLevel, reverse=True)
-            
+        # Sort edges by decreasing pheromone levels
+        self.edgeInfos.sort(key=geteiPheromoneLevel, reverse=True)
+        start = 0
+        C = []
         subtrees = UnionFind()
         solution = []
         degrees = defaultdict(int)
-        
-        for ei in self.edgeInfos:
-            u, v = ei.u, ei.v
-            '''Essaye d'ajouter un arc a la solution'''
-            if subtrees[u] != subtrees[v] and \
-               degrees[u] < self.d and degrees[v] < self.d: #Check constraint
-                solution.append(ei)
-                if len(solution) == self.n - 1:
-                    break
-                degrees[u] += 1
-                degrees[v] += 1
-                subtrees.union(u,v)
+        while len(solution) != self.n - 1:
+            C = self.edgeInfos[start : start + self.nCandiates]
+            C.sort(key=geteiCost)
+            start += self.nCandiates
+            
+            for ei in C:
+                u, v = ei.u, ei.v
+                '''Essaye d'ajouter un arc a la solution'''
+                if subtrees[u] != subtrees[v] and \
+                   degrees[u] < self.d and degrees[v] < self.d:  # Check constraint
+                    solution.append(ei)
+                    degrees[u] += 1
+                    degrees[v] += 1
+                    subtrees.union(u, v)
             
         return solution
-
-    '''    
+     
     def getSolution(self):
-        #Initialization State
-        assign one ant to each vertex of the graph
-        initialize pheromone level of each edge
-        B ←− ∅ # best tree
-        cost(B) ←− ∞
-        while stopping criteria not met
+        # Initialization State
+        # assign one ant to each vertex of the graph
+        self.ants = [Ant(i) for i in self.graph.keys()]
+        # initialize pheromone level of each edge
+        for ei in self.edgeInfos:
+            ei.pheromoneLevel = ei.initialPheromone
+            ei.updates = 0
+            
+        B = self.getTree()  # best tree
+        minCost = getTreeCost(B)
+
+        while True:  # stopping criteria not met:
             # Exploration Stage
-            for step = 1 to s
-                if step = s/3 or step = 2s/3
-                    update pheromone levels for all edges
-                end-if
-                for each ant a
-                    move a along one edge
+            for step in xrange(1, self.s + 1):
+                if step == self.s / 3 or step == 2 * self.s / 3:
+                    self.updatePheromones()
+                for ant in self.ants:
+                    self.moveAnt(ant)  # move ant along one edge
+                    
 
-            update pheromone levels for all edges
+            self.updatePheromones()  # update pheromone levels for all edges
             # Tree Construction Stage
-            while |T| = n−1
-                identify a set C of candidate edges
-                using pheromone levels
-                construct degree-constrained spanning tree T from C
+            T = self.getTree()
+            newCost = getTreeCost(T)
 
-            if cost(T) < cost(B)
-                B ←− T
+            if newCost < minCost:
+                B = T  # Update best tree
+                minCost = newCost
+            
+            self.pheromoneEnhancement(B)  # enhance pheromone levels for edges in the best tree B
+            
+            # if no improvement in 100 cycles
+            #    evaporate pheromone from edges of the best tree B
 
-            enhance pheromone levels for edges in the best tree B
-            if no improvement in 100 cycles
-                evaporate pheromone from edges of the best tree B
 
-
-        return the best tree found B
-        '''
+        return B
+        
 
 if __name__ == '__main__':
     
@@ -225,7 +239,7 @@ if __name__ == '__main__':
             print ei
     printEI()
     print
-    abDCMST.updatePheromone()
+    abDCMST.updatePheromones()
     printEI()
     print
     
