@@ -52,13 +52,13 @@ class Ant:
         return 'Ant({}, {})'.format(self.position, self.visited)
     
 class AB_DCMST:
-    maxCycles = 500  # 10000  # Maximum allowed cycles
+    maxCycles = 700  # 10000  # Maximum allowed cycles
     s = 75  # Steps: number of edges an ant traverses each cycle
     H = 0.5  # Initial pheromone evaporation factor
     Y = 1.5  # Initial pheromone enhancement factor
-    DH = 0.95  # Update constant applied to η
-    DY = 1.05  # Update constant applied to γ
-    updateCycles = 500  # Number of cycles between updating η and γ
+    #DH = 0.95  # Update constant applied to η
+    #DY = 1.05  # Update constant applied to γ
+    #updateCycles = 500  # Number of cycles between updating η and γ
     updateSteps = s / 3  # Number of steps between applying pheromone updates
     escapeCycles = 100  # Number of cycles without improvement before escaping
     stopCycles = 2500  # Number of cycles without improvement before stopping
@@ -199,8 +199,9 @@ class AB_DCMST:
         minCost = getTreeCost(B)
         if self.verbose: print 'Initial minCost =', minCost
         lastImprovementCycle = 0
+        evaporationTimer = 0
         
-        for cycle in xrange(self.maxCycles):  # stopping criteria not met:
+        for cycle in xrange(1, self.maxCycles + 1):  # stopping criteria not met:
             if self.verbose and cycle%100 == 0:
                 print 'cycle =', cycle
             
@@ -208,8 +209,8 @@ class AB_DCMST:
                 break
             
             # Exploration Stage
-            for step in xrange(1, self.s + 1):
-                if step == self.s / 3 or step == 2 * self.s / 3:
+            for step in xrange(1, self.s):
+                if step % self.updateSteps == 0:
                     self.__updatePheromones()
                 for ant in self.ants:
                     self.__moveAnt(ant)  # move ant along one edge
@@ -228,18 +229,19 @@ class AB_DCMST:
                 minCost = newCost
                 if self.verbose: print 'New min Cost', minCost
                 lastImprovementCycle = cycle
+                evaporationTimer = cycle
             
             # enhance pheromone levels for edges in the best tree B
             self.__pheromoneEnhancement(B)
             
             # if no improvement in escapeCycles cycles
-            if cycle - lastImprovementCycle > self.escapeCycles:
-                if self.verbose: print 'No improvement in 100 cycles'
+            if cycle - evaporationTimer > self.escapeCycles:
+                if self.verbose: print 'No improvement in', self.escapeCycles, 'cycles'
                 # evaporate pheromone levels from edges of the best tree B
                 for ei in B:
                     ei.pheromoneLevel *= (1 - self.H)
-                # Reset lastImprovementCycle
-                lastImprovementCycle = cycle
+                # Reset evaporationTimer
+                evaporationTimer = cycle
         return B
 
 if __name__ == '__main__':

@@ -31,10 +31,10 @@ if __name__ == '__main__':
         print filePath
         nbVertices = getNbVertices(filePath)
         edges = getEdges(filePath, nbVertices)
-        print 'Vertices :', nbVertices, 'Edges :', len(edges)
+        #print 'Vertices :', nbVertices, 'Edges :', len(edges)
         
         antBasedSolver = AB_DCMST(edges)
         for constraint in xrange(3, 6):
             tree = antBasedSolver.getSolution(constraint)
-            print constraint, getTreeCost(tree)
-        print
+            print '{}\t{}'.format(constraint, getTreeCost(tree))
+        #print
