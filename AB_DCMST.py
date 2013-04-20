@@ -209,17 +209,18 @@ class AB_DCMST:
                 break
             
             # Exploration Stage
-            for step in xrange(1, self.s):
-                if step % self.updateSteps == 0:
-                    self.__updatePheromones()
+            for step in xrange(1, self.s + 1):
+                # Move all ants along one edge
                 for ant in self.ants:
-                    self.__moveAnt(ant)  # move ant along one edge
+                    self.__moveAnt(ant)
+                if step % self.updateSteps == 0:
+                    # Update pheromone levels for all edges
+                    self.__updatePheromones()
             
-            # Remove visited constraint from ants
+            # Remove visited vertices constraint from ants
             for ant in self.ants:
                 ant.visited.clear()
-                    
-            self.__updatePheromones()  # update pheromone levels for all edges
+ 
             # Tree Construction Stage
             T = self.__getTree()
             newCost = getTreeCost(T)
